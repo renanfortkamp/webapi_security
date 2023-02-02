@@ -1,0 +1,11 @@
+{
+  "Version": 1,
+  "Hash": "zeHorUF0NbTXdKwEhg69a4o2qFPtF4BjUgF2rGRywkk=",
+  "Source": "webapi_security",
+  "BasePath": "_content/webapi_security",
+  "Mode": "Default",
+  "ManifestType": "Build",
+  "ReferencedProjectsConfiguration": [],
+  "DiscoveryPatterns": [],
+  "Assets": []
+}

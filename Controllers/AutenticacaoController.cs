@@ -13,7 +13,7 @@ using webapi_security.Services;
 namespace webapi_security.Controllers
 {
     [ApiController]
-    [Route("api/[controller]")]
+    [Route("api/login")]
     [AllowAnonymous]
     public class AutenticacaoController : ControllerBase
     {

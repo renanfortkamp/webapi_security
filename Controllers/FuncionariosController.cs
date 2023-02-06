@@ -2,8 +2,10 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using AutoMapper;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using webapi_security.Context;
 using webapi_security.Dto;
 using webapi_security.Models;
@@ -18,62 +20,137 @@ namespace webapi_security.Controllers
     {
         private readonly RhContext _context;
 
-        public FuncionariosController(RhContext context)
+        private readonly IMapper _mapper;
+
+        public FuncionariosController(RhContext context, IMapper mapper)
         {
             _context = context;
+            _mapper = mapper;
         }
 
-        [HttpGet]
+        [HttpGet("Listar")]
+        [Authorize(Roles = ("Funcionario, Gerente, Administrador"))]
         public async Task<ActionResult<IEnumerable<Funcionario>>> Get()
         {
-            return _context.Funcionarios.ToList();
+            try
+            {
+                var funcionarios = await _context.Funcionarios.ToListAsync();
+                if (User.IsInRole("Funcionario"))
+                {
+                    var funcionariosMapeados = _mapper.Map<List<NomePermissao>>(funcionarios);
+
+                    return Ok(funcionariosMapeados);
+                }
+                else
+                {
+                    var funcionariosMapeados = _mapper.Map<List<FuncionarioRequest>>(funcionarios);
+                    return Ok(funcionariosMapeados);
+                }
+            }
+            catch
+            {
+                return StatusCode(500, "Erro interno no servidor, tente novamente mais tarde");
+            }
         }
 
-        [HttpGet("{id}")]
+        [HttpGet("Buscar/{id}")]
+        [Authorize(Roles = ("Funcionario, Gerente, Administrador"))]
         public async Task<ActionResult<Funcionario>> Get(int id)
         {
-            var funcionario = _context.Funcionarios.FirstOrDefault(x => x.Id == id);
-            if (funcionario == null)
+            try
             {
-                return NotFound();
+                var funcionario = await _context.Funcionarios.FirstOrDefaultAsync(x => x.Id == id);
+                if (funcionario == null)
+                {
+                    return NotFound("Funcionario não encontrado!");
+                }
+                if (User.IsInRole("Funcionario"))
+                {
+                    var funcionarioMapeado = _mapper.Map<NomePermissao>(funcionario);
+
+                    return Ok(funcionarioMapeado);
+                }
+                var funcionarioMap = _mapper.Map<FuncionarioRequest>(funcionario);
+                return Ok(funcionarioMap);
             }
-
-            return funcionario;
-        }
-
-        [HttpPost]
-        public async Task<ActionResult<Funcionario>> Post([FromBody] Funcionario funcionario)
-        {
-            _context.Funcionarios.Add(funcionario);
-            _context.SaveChanges();
-            return funcionario;
-        }
-
-        [HttpPut("{id}")]
-        public async Task<ActionResult<Funcionario>> Put(int id, [FromBody] Funcionario funcionario)
-        {
-            if (id != funcionario.Id)
+            catch
             {
-                return BadRequest();
+                return StatusCode(500, "Erro interno no servidor, tente novamente mais tarde");
             }
-
-            _context.Entry(funcionario).State = Microsoft.EntityFrameworkCore.EntityState.Modified;
-            _context.SaveChanges();
-            return funcionario;
         }
-        [HttpDelete("{id}")]
+
+        [HttpPost("Cadastrar")]
+        [Authorize(Roles = ("Administrador"))]
+        public async Task<ActionResult<Funcionario>> Post([FromBody] FuncionarioRequest funcionario)
+        {
+            try
+            {
+                var funcionarioEntity = _mapper.Map<Funcionario>(funcionario);
+                await _context.Funcionarios.AddAsync(funcionarioEntity);
+                await _context.SaveChangesAsync();
+                return funcionarioEntity;
+            }
+            catch
+            {
+                return StatusCode(500, "Erro interno no servidor, tente novamente mais tarde");
+            }
+        }
+
+        [HttpPut("AlterarSalario/{id}")]
+        [Authorize(Roles = ("Gerente"))]
+        public async Task<ActionResult<AlterarSalario>> Put(
+            int id,
+            [FromBody] AlterarSalario funcionario
+        )
+        {
+            try
+            {
+                var funcionarioEntity = await _context.Funcionarios.FirstOrDefaultAsync(
+                    x => x.Id == id
+                );
+                if (funcionarioEntity == null)
+                {
+                    return NotFound();
+                }
+
+                funcionarioEntity.Salario = funcionario.Salario;
+
+                _context.Entry(funcionarioEntity).State = EntityState.Modified;
+                _context.SaveChanges();
+                return Ok($"Salário do funcionário {funcionarioEntity.Nome} alterado com sucesso!");
+            }
+            catch
+            {
+                return StatusCode(500, "Erro interno no servidor, tente novamente mais tarde");
+            }
+        }
+
+        [HttpDelete("Deletar/{id}")]
+        [Authorize(Roles = ("Gerente, Administrador"))]
         public async Task<ActionResult<Funcionario>> Delete(int id)
         {
-            var funcionario = _context.Funcionarios.FirstOrDefault(x => x.Id == id);
-            if (funcionario == null)
+            try
             {
-                return NotFound();
+                var funcionario = await _context.Funcionarios.FirstOrDefaultAsync(x => x.Id == id);
+                if (funcionario == null)
+                {
+                    return NotFound("Funcionario não encontrado!");
+                }
+                if (User.IsInRole("Gerente"))
+                {
+                    if (funcionario.PermissaoId == 3)
+                    {
+                        return BadRequest("Você não tem permissão para deletar um administrador!");
+                    }
+                }
+                _context.Funcionarios.Remove(funcionario);
+                _context.SaveChanges();
+                return Ok($"Funcionario {funcionario.Nome} deletado com sucesso!");
             }
-
-            _context.Funcionarios.Remove(funcionario);
-            _context.SaveChanges();
-            return funcionario;
+            catch
+            {
+                return StatusCode(500, "Erro interno no servidor, tente novamente mais tarde");
+            }
         }
-        
     }
 }

@@ -15,9 +15,9 @@ namespace webapisecurity.Migrations
                                  "INTO Permissao" +
                                      "(nome) " +
                                  "VALUES" +
-                                     "('funcionario')," +
-                                     "('gerente')," +
-                                     "('administrador')");
+                                     "('Funcionario')," +
+                                     "('Gerente')," +
+                                     "('Administrador')");
         }
 
         /// <inheritdoc />

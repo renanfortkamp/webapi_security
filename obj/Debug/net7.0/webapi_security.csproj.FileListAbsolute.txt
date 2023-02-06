@@ -75,3 +75,5 @@ C:\repos\devinhouse\modulo03\webapi_security\obj\Debug\net7.0\refint\webapi_secu
 C:\repos\devinhouse\modulo03\webapi_security\obj\Debug\net7.0\webapi_security.pdb
 C:\repos\devinhouse\modulo03\webapi_security\obj\Debug\net7.0\webapi_security.genruntimeconfig.cache
 C:\repos\devinhouse\modulo03\webapi_security\obj\Debug\net7.0\ref\webapi_security.dll
+C:\repos\devinhouse\modulo03\webapi_security\bin\Debug\net7.0\AutoMapper.dll
+C:\repos\devinhouse\modulo03\webapi_security\bin\Debug\net7.0\AutoMapper.Extensions.Microsoft.DependencyInjection.dll
